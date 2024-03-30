@@ -4,11 +4,13 @@ import pathlib
 ## Class for S3 Functionality
 class S3Func:
     # Constructor to initialize the functionality object and authenticate
-    def __init__(self, aws_access_key_id: str, aws_secret_access_key: str):
+    def __init__(self, aws_access_key_id: str, aws_secret_access_key: str, region_name: str = 'ca-central-1'):
         self.session = boto3.Session(aws_access_key_id = aws_access_key_id, aws_secret_access_key = aws_secret_access_key)
         self.s3Client = self.session.client('s3')
         self.s3Res = self.session.resource('s3')
+        self.region_name = region_name
         self.workingDir = '/'
+        self.user = self.session.client('iam').get_user().get('User').get('UserName') or 'root'
 
         try:
             self.hasBuckets = True if len(self.s3Client.list_buckets().get('Buckets')) > 0 else False
@@ -111,7 +113,7 @@ class S3Func:
             raise Exception('Cannot create bucket. Make sure the format is: create_bucket /<bucket name>')
 
         try:
-            self.s3Client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': 'ca-central-1'})
+            self.s3Client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': self.region_name})
         except Exception:
             raise Exception('Cannot create a bucket. Make sure the bucket name: {} is not taken'.format(bucket_name))
 
